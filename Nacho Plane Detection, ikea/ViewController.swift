@@ -16,7 +16,8 @@ class ViewController: UIViewController {
     let config = ARWorldTrackingConfiguration()
     @IBOutlet weak var sessionInfoLabel: UILabel!
     var furnitureNodes: [Furniture] = []
-    
+//    var candle: Furniture = Furniture.init(itemName: "candle")
+
     var cameraOrientation: SCNVector3?
     var cameraLocation: SCNVector3?
     var currentPositionOfCamera: SCNVector3?
@@ -24,7 +25,7 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        self.sceneView.debugOptions = [ARSCNDebugOptions.showFeaturePoints, ARSCNDebugOptions.showWorldOrigin]
+//        self.sceneView.debugOptions = [ARSCNDebugOptions.showFeaturePoints, ARSCNDebugOptions.showWorldOrigin]
         self.sceneView.delegate = self
         config.planeDetection = .horizontal
 //        config.planeDetection = .vertical
@@ -39,22 +40,98 @@ class ViewController: UIViewController {
         // Do any additional setup after loading the view, typically from a nib.
     }
     
+//    @objc func moveObject(_ recognizer: UIPanGestureRecognizer) {
+//        let sceneViewTappedOn = recognizer.view as! ARSCNView
+//        let location = recognizer.location(in: sceneViewTappedOn)
+//
+//        // Drag the object on an infinite plane
+//        let arHitTestResult = sceneView.hitTest(location, types: .existingPlane)
+//        let hittest = sceneViewTappedOn.hitTest(location)
+//
+//        if !arHitTestResult.isEmpty {
+//            let hit = arHitTestResult.first!
+//            chameleon.setTransform(hit.worldTransform)
+//
+//            if recognizer.state == .ended {
+//                chameleon.reactToPositionChange(in: sceneView)
+//            }
+//        }
+//    }
+//
     @objc func moveObject(sender: UIPanGestureRecognizer) {
         let sceneViewTappedOn = sender.view as! ARSCNView
         let touchCoordinates = sender.location(in: sceneViewTappedOn)
         
         let hittest = sceneViewTappedOn.hitTest(touchCoordinates)
-        if !hittest.isEmpty, let results = hittest.first {
-            let node = results.node
-            let translation = sender.translation(in: sceneViewTappedOn)
-            let position = SCNVector3.init(CGFloat(node.position.x) + CGFloat(translation.x),
-                                           CGFloat(node.position.y),
-                                           CGFloat(node.position.z) +  CGFloat(translation.y))
-            node.enumerateChildNodes { (childNode, _) in
-                childNode.position = position
-            }
-            if sender.state == .changed {
+        let arHitTestResult = sceneView.hitTest(touchCoordinates, types: .existingPlane)
+        let hitTestPlane = sceneViewTappedOn.hitTest(touchCoordinates, types: .existingPlaneUsingExtent)
 
+//        for result in hittest {
+//            let node = result.node
+//            if let name = node.name {
+//                print("******************************"+name)
+//            }
+//        }
+//        if !hittest.isEmpty && !arHitTestResult.isEmpty , let results = hittest.first {
+        if !arHitTestResult.isEmpty , let results = hittest.first {
+
+            let hit = arHitTestResult.first!
+
+            let node = results.node
+//            if let parent = node.parent {
+//
+//                parent.simdTransform = hit.worldTransform
+//            }
+            
+            if sender.state == .changed || sender.state == .began {
+                
+                if let myNode = node.parentOfType() as? Furniture {
+                    // do something
+                    print("******************************parentOfType"+myNode.name!)
+
+                }
+                if let node = node.parent as? Furniture {
+                    print("******************************Got furnitue node"+node.name!)
+
+                }
+                if let node = node as? Furniture {
+                    print("******************************Got furnitue node"+node.name!)
+                    
+                }
+                if let name = node.name {
+                    print("******************************"+name)
+                }
+                if let parent = node.parent {
+                    if let parentNAme = parent.name {
+                        print("******************************"+parentNAme)
+                        let tappedNode = furnitureNodes.filter { (node) -> Bool in
+                            print("******************************"+node.name!)
+                            return node.name == parentNAme
+                        }
+                        tappedNode[0].setTransform(hit.worldTransform)
+
+                    }
+
+//                    let translation = sender.translation(in: sceneViewTappedOn)
+//                    let vector = self.sceneView.unprojectPoint(SCNVector3Make(Float(translation.x),
+//                                                                              0,
+//                                                                              Float(-translation.y)))
+//                    let matrix = results.worldCoordinates
+////                    let vector = SCNVector3Make(matrix.m41, parent.position.y, matrix.m43)
+//
+//                    let position = SCNVector3.init(vector.x,
+//                                                   Float(parent.position.y),
+//                                                   vector.z)
+//
+//                    parent.position = vector
+//                    let moveBy = SCNAction.move(by: vector, duration: 1)
+//                    parent.runAction(moveBy)
+//                    parent.position = position
+//                    parent.enumerateChildNodes { (childNode, _) in
+//                        childNode.position = position
+//                    }
+                }
+                
             }
 
         }
@@ -68,7 +145,7 @@ class ViewController: UIViewController {
         if !hittest.isEmpty, let results = hittest.first {
             let node = results.node
             if let name = node.name {
-                print(name)
+                print("******************************"+name)
             }
             
         }
@@ -76,23 +153,37 @@ class ViewController: UIViewController {
         //test for one type of hit
         let hitTestPlane = sceneViewTappedOn.hitTest(touchCoordinates, types: .existingPlaneUsingExtent)
         if !hitTestPlane.isEmpty, let results = hitTestPlane.first {
-            addItem(anchorPlane: results.anchor!)
+            
+            addItem(anchorPlane: results.anchor!, touchCoordinates: (hittest.first?.worldCoordinates)!)
         }
 
         
     }
     
-    func addItem(anchorPlane: ARAnchor) {
+    func addItem(anchorPlane: ARAnchor, touchCoordinates: SCNVector3) {
         let node = Furniture.init(itemName: "candle")
+        print(node.contentRootNode.name)
+
+        node.setTransform(anchorPlane.transform)
+        furnitureNodes.append(node)
+        self.sceneView.scene.rootNode.addChildNode(node)
+        //we are adding the candle on the plane, whereever the camera is pointing, ignoring the cameras y position, but paying attention to the z and the x position
+
+        
         let transform = anchorPlane.transform
         let location = transform.columns.3
         //we are adding the candle on the plane, whereever the camera is pointing, ignoring the cameras y position, but paying attention to the z and the x position
         if let cameraLocation = cameraLocation {
-            node.position = SCNVector3.init(location.x + cameraLocation.x, location.y, location.z + cameraLocation.z)
+//            node.setTransform(anchorPlane.transform)
+//            node.position = SCNVector3.init(location.x + Float(touchCoordinates.x),
+//                                            location.y,
+//                                            location.z + Float(touchCoordinates.z))
         }
-
         
-        self.sceneView.scene.rootNode.addChildNode(node)
+//        furnitureNodes.append(node)
+//        
+//        self.sceneView.scene.rootNode.addChildNode(node.contentRootNode)
+
     }
 
     override func didReceiveMemoryWarning() {
@@ -241,6 +332,11 @@ extension ViewController: ARSessionDelegate {
         config.planeDetection = .horizontal
         self.sceneView.session.run(config, options: [.resetTracking, .removeExistingAnchors])
     }
+}
+
+// MARK: Gesture Recognized
+extension ViewController {
+
 }
 
 func +(left: SCNVector3, right: SCNVector3) -> SCNVector3 {
