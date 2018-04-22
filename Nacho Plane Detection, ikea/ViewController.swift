@@ -16,6 +16,7 @@ class ViewController: UIViewController {
     let config = ARWorldTrackingConfiguration()
     @IBOutlet weak var sessionInfoLabel: UILabel!
     var furnitureNodes: [Furniture] = []
+    var selectedModel: String = "Pirate"
 //    var candle: Furniture = Furniture.init(itemName: "candle")
 
     var cameraOrientation: SCNVector3?
@@ -28,6 +29,7 @@ class ViewController: UIViewController {
 //        self.sceneView.debugOptions = [ARSCNDebugOptions.showFeaturePoints, ARSCNDebugOptions.showWorldOrigin]
         self.sceneView.delegate = self
         config.planeDetection = .horizontal
+        self.sceneView.autoenablesDefaultLighting = true
 //        config.planeDetection = .vertical
         self.sceneView.session.run(config)
         
@@ -37,6 +39,12 @@ class ViewController: UIViewController {
         let panGest = UIPanGestureRecognizer.init(target: self, action: #selector(moveObject))
         self.sceneView.addGestureRecognizer(panGest)
 
+        
+        let pinchGest = UIPinchGestureRecognizer.init(target: self, action: #selector(pinched(sender:)))
+        self.sceneView.addGestureRecognizer(pinchGest)
+
+        let rotate = UIRotationGestureRecognizer.init(target: self, action: #selector(rotate(sender:)))
+        self.sceneView.addGestureRecognizer(rotate)
         // Do any additional setup after loading the view, typically from a nib.
     }
     
@@ -58,6 +66,22 @@ class ViewController: UIViewController {
 //        }
 //    }
 //
+    
+    @objc func pinched(sender: UIPinchGestureRecognizer) {
+        let sceneView = sender.view as! ARSCNView
+        let pinchLocation = sender.location(in: sceneView)
+        let hitTest = sceneView.hitTest(pinchLocation)
+        if !hitTest.isEmpty {
+            let results = hitTest.first!
+            let node = results.node
+            let pinchACtion = SCNAction.scale(by: sender.scale, duration: 0)
+            node.parent?.enumerateChildNodes { (childnode, _) in
+                childnode.runAction(pinchACtion)
+            }
+            sender.scale = 1.0
+        }
+    }
+    
     @objc func moveObject(sender: UIPanGestureRecognizer) {
         let sceneViewTappedOn = sender.view as! ARSCNView
         let touchCoordinates = sender.location(in: sceneViewTappedOn)
@@ -78,29 +102,8 @@ class ViewController: UIViewController {
             let hit = arHitTestResult.first!
 
             let node = results.node
-//            if let parent = node.parent {
-//
-//                parent.simdTransform = hit.worldTransform
-//            }
-            
+
             if sender.state == .changed || sender.state == .began {
-                
-                if let myNode = node.parentOfType() as? Furniture {
-                    // do something
-                    print("******************************parentOfType"+myNode.name!)
-
-                }
-                if let node = node.parent as? Furniture {
-                    print("******************************Got furnitue node"+node.name!)
-
-                }
-                if let node = node as? Furniture {
-                    print("******************************Got furnitue node"+node.name!)
-                    
-                }
-                if let name = node.name {
-                    print("******************************"+name)
-                }
                 if let parent = node.parent {
                     if let parentNAme = parent.name {
                         print("******************************"+parentNAme)
@@ -111,31 +114,51 @@ class ViewController: UIViewController {
                         tappedNode[0].setTransform(hit.worldTransform)
 
                     }
-
-//                    let translation = sender.translation(in: sceneViewTappedOn)
-//                    let vector = self.sceneView.unprojectPoint(SCNVector3Make(Float(translation.x),
-//                                                                              0,
-//                                                                              Float(-translation.y)))
-//                    let matrix = results.worldCoordinates
-////                    let vector = SCNVector3Make(matrix.m41, parent.position.y, matrix.m43)
-//
-//                    let position = SCNVector3.init(vector.x,
-//                                                   Float(parent.position.y),
-//                                                   vector.z)
-//
-//                    parent.position = vector
-//                    let moveBy = SCNAction.move(by: vector, duration: 1)
-//                    parent.runAction(moveBy)
-//                    parent.position = position
-//                    parent.enumerateChildNodes { (childNode, _) in
-//                        childNode.position = position
-//                    }
+                } else {
+                    if let name = node.name {
+                        print("******************************"+name)
+                        let tappedNode = furnitureNodes.filter { (node) -> Bool in
+                            print("******************************"+node.name!)
+                            return node.name == name
+                        }
+                        tappedNode[0].setTransform(hit.worldTransform)
+                        
+                    }
                 }
                 
             }
 
         }
     }
+    @objc func rotate(sender: UIRotationGestureRecognizer) {
+        let sceneView = sender.view as! ARSCNView
+        let holdLocation = sender.location(in: sceneView)
+        let hitTest = sceneView.hitTest(holdLocation)
+        if !hitTest.isEmpty {
+            let results = hitTest.first!
+            let node = results.node
+            
+            
+            if sender.state == .changed {
+                
+                let rotateAction = SCNAction.rotateBy(x: 0, y: sender.rotation, z: 0, duration: 1)
+                rotateAction.speed = 0.9 * .pi
+                node.parent?.enumerateChildNodes { (childnode, _) in
+                    childnode.runAction(rotateAction)
+                }
+                sender.rotation = 0
+                
+                print("rotate gesture")
+            } else if sender.state == .ended {
+                node.removeAllActions()
+            } else if sender.state == .cancelled {
+                node.removeAllActions()
+            }
+            
+        }
+        
+    }
+    
     
     @objc func tapped(sender: UITapGestureRecognizer) {
         let sceneViewTappedOn = sender.view as! ARSCNView
@@ -146,22 +169,38 @@ class ViewController: UIViewController {
             let node = results.node
             if let name = node.name {
                 print("******************************"+name)
+                if let parent = node.parent {
+                    if let parentNAme = parent.name {
+                        print("******************************"+parentNAme)
+                        let tappedNode = furnitureNodes.filter { (node) -> Bool in
+                            print("******************************"+node.name!)
+                            return node.name == parentNAme
+                        }
+                        //                        parent.simdTransform = hit.worldTransform
+                        //                        node.setWorldTransform(SCNMatrix4MakeTranslation(hit.worldTransform.columns.3.x, hit.worldTransform.columns.3.y, hit.worldTransform.columns.3.z))
+                        tappedNode[0].playAnimation()
+                        return
+                    }
+                }
             }
-            
+
         }
         
         //test for one type of hit
         let hitTestPlane = sceneViewTappedOn.hitTest(touchCoordinates, types: .existingPlaneUsingExtent)
         if !hitTestPlane.isEmpty, let results = hitTestPlane.first {
-            
             addItem(anchorPlane: results.anchor!, touchCoordinates: (hittest.first?.worldCoordinates)!)
         }
 
         
+        
+        
+        
+        
     }
     
     func addItem(anchorPlane: ARAnchor, touchCoordinates: SCNVector3) {
-        let node = Furniture.init(itemName: "candle")
+        let node = Furniture.init(itemName: self.selectedModel)
         print(node.contentRootNode.name)
 
         node.setTransform(anchorPlane.transform)
@@ -191,7 +230,22 @@ class ViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
 
+    @IBAction func Shark(_ sender: Any) {
+        self.selectedModel = "candle"
+    }
+    @IBAction func Pirate(_ sender: Any) {
+        self.selectedModel = "chair"
 
+    }
+    @IBAction func PirateShip(_ sender: Any) {
+        self.selectedModel = "cup"
+
+    }
+    @IBAction func pirateShipFlying(_ sender: Any) {
+        self.selectedModel = "lamp"
+
+    }
+    
 }
 
 extension ViewController: ARSCNViewDelegate {

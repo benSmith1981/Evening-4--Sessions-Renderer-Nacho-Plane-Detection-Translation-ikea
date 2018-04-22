@@ -31,6 +31,9 @@ class Furniture: SCNNode {
     var itemName: String?
     let contentRootNode = SCNNode()
     var id: String = ""
+    private var idleAnimation: SCNAnimation?
+    private var movingAnimation: SCNAnimation?
+    
     init(itemName: String) {
         super.init()
         id = "\(itemName)\(UUID.init())"
@@ -55,6 +58,9 @@ class Furniture: SCNNode {
             self.addChildNode(contentRootNode)
             contentRootNode.addChildNode(wrapperNode)
         }
+        
+        preloadAnimations()
+
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -63,5 +69,46 @@ class Furniture: SCNNode {
     
     func setTransform(_ transform: simd_float4x4) {
         contentRootNode.simdTransform = transform
+    }
+    
+    func preloadAnimations() {
+        idleAnimation = SCNAnimation.fromFile(named: itemName!, inDirectory: "Art.scnassets/\(itemName ?? "")/")
+        idleAnimation?.repeatCount = -1
+        
+        movingAnimation = SCNAnimation.fromFile(named: "\(itemName ?? "")Animation", inDirectory: "Art.scnassets/\(itemName ?? "")Animation/")
+        movingAnimation?.repeatCount = 1
+        movingAnimation?.blendInDuration = 0.3
+        movingAnimation?.blendOutDuration = 0.3
+        
+        // Start playing idle animation.
+        if let anim = idleAnimation {
+            contentRootNode.childNodes[0].addAnimation(anim, forKey: anim.keyPath)
+        }
+    }
+    
+    func playAnimation() {
+        let modelBaseNode = contentRootNode.childNodes[0]
+
+        if let movingAnimation = movingAnimation {
+            modelBaseNode.addAnimation(movingAnimation, forKey: movingAnimation.keyPath)
+        }
+    }
+}
+
+extension SCNAnimation {
+    static func fromFile(named name: String, inDirectory: String ) -> SCNAnimation? {
+        let animScene = SCNScene(named: name, inDirectory: inDirectory)
+        var animation: SCNAnimation?
+        animScene?.rootNode.enumerateChildNodes({ (child, stop) in
+            if !child.animationKeys.isEmpty {
+                let player = child.animationPlayer(forKey: child.animationKeys[0])
+                animation = player?.animation
+                stop.initialize(to: true)
+            }
+        })
+        
+        animation?.keyPath = name
+        
+        return animation
     }
 }
