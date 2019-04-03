@@ -33,7 +33,7 @@ class Furniture: SCNNode {
     var id: String = ""
     private var idleAnimation: SCNAnimation?
     private var movingAnimation: SCNAnimation?
-    
+    var currentRotation = Float.pi
     init(itemName: String) {
         super.init()
         id = "\(itemName)\(UUID.init())"

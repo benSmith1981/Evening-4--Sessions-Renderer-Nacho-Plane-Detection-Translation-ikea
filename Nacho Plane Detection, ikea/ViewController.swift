@@ -16,7 +16,9 @@ class ViewController: UIViewController {
     let config = ARWorldTrackingConfiguration()
     @IBOutlet weak var sessionInfoLabel: UILabel!
     var furnitureNodes: [Furniture] = []
-    var selectedModel: String = "Pirate"
+    var zombies: [Zombie] = []
+
+    var selectedModel: String = "ZombieIdle"
 //    var candle: Furniture = Furniture.init(itemName: "candle")
 
     var cameraOrientation: SCNVector3?
@@ -90,41 +92,64 @@ class ViewController: UIViewController {
         let arHitTestResult = sceneView.hitTest(touchCoordinates, types: .existingPlane)
         let hitTestPlane = sceneViewTappedOn.hitTest(touchCoordinates, types: .existingPlaneUsingExtent)
 
+        let xTranslation = sender.translation(in: sceneView).x
+        var angle = (xTranslation * CGFloat.pi) / 200.0
+        
 //        for result in hittest {
 //            let node = result.node
 //            if let name = node.name {
 //                print("******************************"+name)
 //            }
 //        }
-//        if !hittest.isEmpty && !arHitTestResult.isEmpty , let results = hittest.first {
-        if !arHitTestResult.isEmpty , let results = hittest.first {
+        if !hittest.isEmpty , let results = hittest.first {
+//        if !arHitTestResult.isEmpty , let results = hittest.first {
 
-            let hit = arHitTestResult.first!
+//            let hit = arHitTestResult.first!
 
             let node = results.node
 
             if sender.state == .changed || sender.state == .began {
-                if let parent = node.parent {
-                    if let parentNAme = parent.name {
-                        print("******************************"+parentNAme)
-                        let tappedNode = furnitureNodes.filter { (node) -> Bool in
-                            print("******************************"+node.name!)
-                            return node.name == parentNAme
-                        }
-                        tappedNode[0].setTransform(hit.worldTransform)
-
+                if let name = node.name {
+                    print("******************************"+name)
+                    let tappedNode = zombies.filter { (node) -> Bool in
+                        print("******************************"+node.name!)
+                        return node.name == name
                     }
-                } else {
-                    if let name = node.name {
-                        print("******************************"+name)
-                        let tappedNode = furnitureNodes.filter { (node) -> Bool in
-                            print("******************************"+node.name!)
-                            return node.name == name
-                        }
-                        tappedNode[0].setTransform(hit.worldTransform)
-                        
+                    if tappedNode.count > 0 {
+                        tappedNode[0].currentRotation = angle
+                        //                            tappedNode[0].setTransform(hit.worldTransform)
                     }
+                    
                 }
+//                if let parent = node.parent {
+//                    if let parentNAme = parent.name {
+//                        print("******************************"+parentNAme)
+//                        let tappedNode = zombies.filter { (node) -> Bool in
+//                            print("******************************"+node.name!)
+//                            return node.name == parentNAme
+//                        }
+//                        if tappedNode.count > 0 {
+//                            angle += tappedNode[0].currentRotation
+//                            tappedNode[0].rotation = SCNVector4.init(0, 1, 0, angle)
+//
+////                            tappedNode[0].setTransform(hit.worldTransform)
+//                        }
+//
+//                    }
+//                } else {
+//                    if let name = node.name {
+//                        print("******************************"+name)
+//                        let tappedNode = zombies.filter { (node) -> Bool in
+//                            print("******************************"+node.name!)
+//                            return node.name == name
+//                        }
+//                        if tappedNode.count > 0 {
+//                            tappedNode[0].currentRotation = angle
+////                            tappedNode[0].setTransform(hit.worldTransform)
+//                        }
+//
+//                    }
+//                }
                 
             }
 
@@ -134,6 +159,8 @@ class ViewController: UIViewController {
         let sceneView = sender.view as! ARSCNView
         let holdLocation = sender.location(in: sceneView)
         let hitTest = sceneView.hitTest(holdLocation)
+        
+
         if !hitTest.isEmpty {
             let results = hitTest.first!
             let node = results.node
@@ -172,13 +199,25 @@ class ViewController: UIViewController {
                 if let parent = node.parent {
                     if let parentNAme = parent.name {
                         print("******************************"+parentNAme)
-                        let tappedNode = furnitureNodes.filter { (node) -> Bool in
-                            print("******************************"+node.name!)
-                            return node.name == parentNAme
+//                        let tappedNode = furnitureNodes.filter { (node) -> Bool in
+//                            print("******************************"+node.name!)
+//                            return node.name == parentNAme
+//                        }
+//                        tappedNode[0].playAnimation()
+
+                        let tappedNode = zombies.filter { (node) -> Bool in
+//                            print("******************************"+node.name!)
+                            return node.name == name
                         }
-                        //                        parent.simdTransform = hit.worldTransform
-                        //                        node.setWorldTransform(SCNMatrix4MakeTranslation(hit.worldTransform.columns.3.x, hit.worldTransform.columns.3.y, hit.worldTransform.columns.3.z))
-                        tappedNode[0].playAnimation()
+                        if tappedNode[0].idle {
+                            tappedNode[0].playTransitionAnimation()
+
+                        }
+                        if tappedNode[0].transition {
+                            tappedNode[0].playTurnAnimation()
+
+                        }
+
                         return
                     }
                 }
@@ -191,26 +230,26 @@ class ViewController: UIViewController {
         if !hitTestPlane.isEmpty, let results = hitTestPlane.first {
             addItem(anchorPlane: results.anchor!, touchCoordinates: (hittest.first?.worldCoordinates)!)
         }
-
-        
-        
-        
-        
         
     }
     
     func addItem(anchorPlane: ARAnchor, touchCoordinates: SCNVector3) {
-        let node = Furniture.init(itemName: self.selectedModel)
+//        let node = Furniture.init(itemName: self.selectedModel)
+        let node = Zombie.init(itemName: self.selectedModel)
+
         print(node.contentRootNode.name)
-
-        node.setTransform(anchorPlane.transform)
-        furnitureNodes.append(node)
-        self.sceneView.scene.rootNode.addChildNode(node)
-        //we are adding the candle on the plane, whereever the camera is pointing, ignoring the cameras y position, but paying attention to the z and the x position
-
         
         let transform = anchorPlane.transform
         let location = transform.columns.3
+
+        node.setTransform(anchorPlane.transform)
+//        furnitureNodes.append(node)
+        zombies.append(node)
+
+        self.sceneView.scene.rootNode.addChildNode(node)
+        //we are adding the candle on the plane, whereever the camera is pointing, ignoring the cameras y position, but paying attention to the z and the x position
+
+
         //we are adding the candle on the plane, whereever the camera is pointing, ignoring the cameras y position, but paying attention to the z and the x position
         if let cameraLocation = cameraLocation {
 //            node.setTransform(anchorPlane.transform)
@@ -314,6 +353,12 @@ extension ViewController: ARSCNViewDelegate {
         lava.geometry?.firstMaterial?.isDoubleSided = true
         return lava
         
+    }
+    
+    func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
+        if zombies.count > 0 {
+            zombies[0].reactToRendering(in: sceneView)
+        }
     }
     
 }

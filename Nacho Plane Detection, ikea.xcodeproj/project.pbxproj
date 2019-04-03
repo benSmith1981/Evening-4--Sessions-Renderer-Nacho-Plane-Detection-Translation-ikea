@@ -16,6 +16,7 @@
 		9025BA702088F24B0023D67D /* Nacho_Plane_Detection__ikeaUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9025BA6F2088F24B0023D67D /* Nacho_Plane_Detection__ikeaUITests.swift */; };
 		9025BA7E20890BC20023D67D /* Art.scnassets in Resources */ = {isa = PBXBuildFile; fileRef = 9025BA7D20890BC20023D67D /* Art.scnassets */; };
 		9025BA8020890C880023D67D /* Furniture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9025BA7F20890C880023D67D /* Furniture.swift */; };
+		90830D14208E511200F31C0D /* Zombie.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90830D13208E511100F31C0D /* Zombie.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -51,6 +52,7 @@
 		9025BA712088F24B0023D67D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		9025BA7D20890BC20023D67D /* Art.scnassets */ = {isa = PBXFileReference; lastKnownFileType = wrapper.scnassets; path = Art.scnassets; sourceTree = "<group>"; };
 		9025BA7F20890C880023D67D /* Furniture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Furniture.swift; sourceTree = "<group>"; };
+		90830D13208E511100F31C0D /* Zombie.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Zombie.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -104,6 +106,7 @@
 				9025BA4F2088F24A0023D67D /* AppDelegate.swift */,
 				9025BA512088F24A0023D67D /* ViewController.swift */,
 				9025BA7F20890C880023D67D /* Furniture.swift */,
+				90830D13208E511100F31C0D /* Zombie.swift */,
 				9025BA532088F24A0023D67D /* Main.storyboard */,
 				9025BA562088F24B0023D67D /* Assets.xcassets */,
 				9025BA582088F24B0023D67D /* LaunchScreen.storyboard */,
@@ -264,6 +267,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9025BA522088F24A0023D67D /* ViewController.swift in Sources */,
+				90830D14208E511200F31C0D /* Zombie.swift in Sources */,
 				9025BA8020890C880023D67D /* Furniture.swift in Sources */,
 				9025BA502088F24A0023D67D /* AppDelegate.swift in Sources */,
 			);
